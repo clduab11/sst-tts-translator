@@ -1,0 +1,43 @@
+name: ddd_domain_generation
+metadata:
+  description: Template for generating DDD domain structures
+  task_type: code_generation
+  language: python
+
+template: |
+  <task type="ddd_scaffold">
+    <intent>{{ intent }}</intent>
+    <domain>{{ domain_name }}</domain>
+    
+    <requirements>
+      <requirement>Follow Domain-Driven Design principles</requirement>
+      <requirement>Separate entities, value objects, and services</requirement>
+      <requirement>Implement repository pattern</requirement>
+      <requirement>Use proper abstraction layers</requirement>
+    </requirements>
+    
+    <context>
+      <pattern>Domain-Driven Design</pattern>
+      <language>Python</language>
+      {% if description %}
+      <description>{{ description }}</description>
+      {% endif %}
+    </context>
+  </task>
+  
+  <reasoning>
+    Design the domain by:
+    1. Identifying core entities and their attributes
+    2. Defining value objects for immutable concepts
+    3. Creating repository interfaces for data access
+    4. Designing domain services for business logic
+    5. Establishing clear boundaries and relationships
+  </reasoning>
+  
+  <output_format>
+    Provide JSON structure with:
+    - entities: List of domain entities with fields
+    - value_objects: List of immutable value objects
+    - repositories: Repository interfaces for entities
+    - services: Domain services for business operations
+  </output_format>
