@@ -4,6 +4,7 @@ Voice-driven development system that transforms natural speech into structured c
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Security](https://img.shields.io/badge/security-updated-green.svg)](SECURITY.md)
 
 ## Overview
 
@@ -216,6 +217,16 @@ Contributions are welcome! Please follow these steps:
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## Security
+
+Security is a top priority. All dependencies are regularly updated to patch known vulnerabilities.
+
+**Latest Security Updates:**
+- FastAPI updated to 0.109.1 (ReDoS vulnerability fixed)
+- python-multipart updated to 0.0.22 (multiple vulnerabilities fixed)
+
+For security issues or to report vulnerabilities, see [SECURITY.md](SECURITY.md).
 
 ## License
 
