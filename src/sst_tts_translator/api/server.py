@@ -456,7 +456,11 @@ async def synthesize_speech(request: TTSRequest):
         Audio data or streaming audio response
     """
     if tts_provider is None:
-        raise HTTPException(status_code=503, detail="TTS provider not available")
+        raise HTTPException(
+            status_code=503,
+            detail="TTS provider not configured. Check TTS_PROVIDER and "
+                   "related API keys in environment variables."
+        )
     
     try:
         if request.stream:

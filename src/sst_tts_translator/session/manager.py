@@ -80,6 +80,8 @@ class SessionManager:
         while len(self._sessions) > self._max_sessions:
             oldest_id = min(
                 self._sessions,
-                key=lambda sid: self._sessions[sid].created_at,
+                key=lambda sid: datetime.fromisoformat(
+                    self._sessions[sid].created_at
+                ),
             )
             del self._sessions[oldest_id]

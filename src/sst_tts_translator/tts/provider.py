@@ -148,9 +148,10 @@ class ElevenLabsTTS(TTSProvider):
                 return response.content
         except httpx.HTTPStatusError as e:
             safe_text = html.escape(text[:50])
+            detail = html.escape(e.response.text[:200]) if e.response.text else ""
             raise RuntimeError(
                 f"ElevenLabs API error for text '{safe_text}...': "
-                f"{e.response.status_code}"
+                f"{e.response.status_code} {detail}"
             ) from e
         except Exception as e:
             raise RuntimeError(f"ElevenLabs synthesis error: {e}") from e
@@ -183,9 +184,10 @@ class ElevenLabsTTS(TTSProvider):
                         yield chunk
         except httpx.HTTPStatusError as e:
             safe_text = html.escape(text[:50])
+            detail = html.escape(e.response.text[:200]) if e.response.text else ""
             raise RuntimeError(
                 f"ElevenLabs streaming error for text '{safe_text}...': "
-                f"{e.response.status_code}"
+                f"{e.response.status_code} {detail}"
             ) from e
         except Exception as e:
             raise RuntimeError(

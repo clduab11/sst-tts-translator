@@ -23,6 +23,8 @@ class GitManager:
                 cwd=str(self.repo_path),
             )
             stdout, stderr = await process.communicate()
+            # returncode is always set after communicate(), but we
+            # guard against None for type-safety with the type checker
             returncode = process.returncode if process.returncode is not None else -1
             return (
                 stdout.decode().strip(),

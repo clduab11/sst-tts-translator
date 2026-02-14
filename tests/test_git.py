@@ -70,7 +70,7 @@ async def test_git_diff_staged():
 
 @pytest.mark.asyncio
 async def test_git_status_invalid_path():
-    """Test git status with invalid repo path."""
+    """Test git status with invalid repo path returns error."""
     gm = GitManager("/tmp/nonexistent_repo_path_xyz")
     result = await gm.status()
-    assert result.get("error", False) is True or result.get("branch") == ""
+    assert result.get("error") is True
