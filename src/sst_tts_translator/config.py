@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     default_llm_provider: str = "openai"
     default_llm_model: str = "gpt-4"
     
+    # TTS Provider
+    tts_provider: str = "piper"  # piper or elevenlabs
+    elevenlabs_api_key: Optional[str] = None
+    
     # Audio Configuration
     audio_sample_rate: int = 16000
     audio_chunk_size: int = 1024
@@ -30,6 +34,9 @@ class Settings(BaseSettings):
     # Prompt Configuration
     prompt_template_dir: str = "./templates"
     enable_cot: bool = True  # Chain of Thought
+    
+    # Session Configuration
+    max_sessions: int = 100
     
     # Logging
     log_level: str = "INFO"
