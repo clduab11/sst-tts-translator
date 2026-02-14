@@ -185,9 +185,6 @@ class DDDGenerator:
                 lines.append("")
         
         return "\n".join(lines)
-                lines.append("")
-        
-        return "\n".join(lines)
     
     def _generate_python_value_object(self, vo: ValueObject) -> str:
         """Generate Python value object class."""
@@ -204,8 +201,16 @@ class DDDGenerator:
             "    ",
         ]
         
+        # Reorder fields: required without defaults, required with defaults,
+        # optional without defaults, optional with defaults
+        required_no_default = [f for f in vo.fields if f.required and f.default is None]
+        required_with_default = [f for f in vo.fields if f.required and f.default is not None]
+        optional_no_default = [f for f in vo.fields if not f.required and f.default is None]
+        optional_with_default = [f for f in vo.fields if not f.required and f.default is not None]
+        ordered_fields = required_no_default + required_with_default + optional_no_default + optional_with_default
+
         # Add fields
-        for field_def in vo.fields:
+        for field_def in ordered_fields:
             field_type = field_def.type
             if not field_def.required:
                 field_type = f"Optional[{field_type}]"

@@ -165,7 +165,7 @@ class DeepgramSTT(STTProvider):
                 yield transcript
                 
         except Exception as e:
-            raise RuntimeError(f"Deepgram transcription error: {e}")
+            raise RuntimeError(f"Deepgram transcription error: {e}") from e
     
     async def transcribe_file(self, audio_data: bytes) -> str:
         """Transcribe complete audio file using Deepgram v3 SDK."""
@@ -181,8 +181,8 @@ class DeepgramSTT(STTProvider):
             punctuate=True
         )
         
-        # Transcribe
-        response = dg_client.listen.rest.v("1").transcribe_file(payload, options)
+        # Transcribe using async prerecorded client
+        response = await dg_client.listen.asyncprerecorded.v("1").transcribe_file(payload, options)
         
         # Extract transcript
         if response and response.results:

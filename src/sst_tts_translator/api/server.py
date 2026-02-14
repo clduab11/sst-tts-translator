@@ -189,14 +189,22 @@ async def websocket_transcribe(websocket: WebSocket):
         
         await websocket.send_json({"type": "end"})
         
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected during transcription")
     except Exception as e:
         logger.error(f"WebSocket transcription error: {e}")
-        await websocket.send_json({
-            "type": "error",
-            "message": str(e)
-        })
+        try:
+            await websocket.send_json({
+                "type": "error",
+                "message": str(e)
+            })
+        except (WebSocketDisconnect, Exception) as send_err:
+            logger.debug(f"Could not send error to websocket: {send_err}")
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except (WebSocketDisconnect, Exception) as close_err:
+            logger.debug(f"WebSocket already closed: {close_err}")
 
 
 @app.post("/api/translate-prompt")
