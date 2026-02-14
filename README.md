@@ -14,7 +14,24 @@ SST/TTS Translator is a middleman LLM system that bridges voice input and code g
 2. **Prompt Translation**: Converts natural speech to structured prompts (XML tags, context blocks, Chain of Thought)
 3. **LLM Router**: Routes to coding LLMs and agent swarms (OpenAI, Anthropic)
 4. **Code Generation**: Generates clean, maintainable code
-5. **DDD Scaffolds**: Creates Domain-Driven Design project structures
+5. **DDD Scaffolds**: Creates Document-Driven Development project structures
+
+## Document-Driven Development Philosophy
+
+This repository embraces the Document-Driven Development (DDD) philosophy. DDD emphasizes the importance of clear, purposeful, and comprehensive documentation to guide project structure and development decisions. The approach consists of:
+
+- **Two Repositories**:
+  - The primary repository serves as the "final product," reflecting code in its intended form.
+  - A secondary repository designed in enhanced Markdown files. This auxiliary repository contains well-structured, highly-focused documentation that lays the foundation for every development phase.
+
+- **Structured Process**:
+  - Every feature, function, and system sub-component is first designed in written form as comprehensive documents (roadmaps, flows, user stories, architecture specifications, etc.).
+  - These documents ensure no ambiguity in project scope or functionality. Contributors can use them as a reference to implement features in the primary repository.
+
+- **Collaboration**:
+  - Foster effective collaboration, ensuring seamless integration of all parts. Structured documentation functions as the single source of truth for the team and is regularly reviewed for updates and consistency.
+
+This methodology ensures a robust foundation and yields results with scalability, maintainability, and ease of use.
 
 ## Features
 
@@ -22,7 +39,7 @@ SST/TTS Translator is a middleman LLM system that bridges voice input and code g
 - 🔄 **Streaming Audio**: Real-time transcription via WebSocket
 - 📝 **Structured Prompts**: XML-based prompt templates with CoT reasoning
 - 🤖 **Agent Swarms**: Architect, Developer, Reviewer, and Tester agents
-- 🏗️ **DDD Generation**: Automated scaffold creation for domain-driven projects
+- 🏗️ **DDD Generation**: Automated scaffold creation for document-driven projects
 - ⚡ **Async Processing**: Non-blocking I/O throughout
 - 🔌 **REST API**: FastAPI-based endpoints
 - 🛠️ **CLI Tools**: Command-line interface for all operations
