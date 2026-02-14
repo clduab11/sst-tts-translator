@@ -14,20 +14,23 @@ class GitManager:
 
     async def _run_git(self, *args: str) -> Tuple[str, str, int]:
         """Run a git command and return (stdout, stderr, returncode)."""
-        process = await asyncio.create_subprocess_exec(
-            "git",
-            *args,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            cwd=str(self.repo_path),
-        )
-        stdout, stderr = await process.communicate()
-        returncode = process.returncode if process.returncode is not None else -1
-        return (
-            stdout.decode().strip(),
-            stderr.decode().strip(),
-            returncode,
-        )
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "git",
+                *args,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(self.repo_path),
+            )
+            stdout, stderr = await process.communicate()
+            returncode = process.returncode if process.returncode is not None else -1
+            return (
+                stdout.decode().strip(),
+                stderr.decode().strip(),
+                returncode,
+            )
+        except FileNotFoundError:
+            return ("", f"Directory not found: {self.repo_path}", -1)
 
     async def status(self) -> Dict[str, Any]:
         """Get repository status.
