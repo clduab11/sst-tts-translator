@@ -40,8 +40,11 @@ class OpenAIClient(LLMClient):
     
     def __init__(self, api_key: str, model: str = "gpt-4"):
         """Initialize OpenAI client."""
+        from openai import AsyncOpenAI
+        
         self.api_key = api_key
         self.model = model
+        self.client = AsyncOpenAI(api_key=self.api_key)
     
     async def generate(
         self,
@@ -51,12 +54,8 @@ class OpenAIClient(LLMClient):
         stream: bool = False
     ) -> AsyncIterator[str]:
         """Generate response from OpenAI."""
-        from openai import AsyncOpenAI
-        
-        client = AsyncOpenAI(api_key=self.api_key)
-        
         try:
-            response = await client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
@@ -72,7 +71,7 @@ class OpenAIClient(LLMClient):
                 yield response.choices[0].message.content
                 
         except Exception as e:
-            raise RuntimeError(f"OpenAI generation error: {e}")
+            raise RuntimeError(f"OpenAI generation error: {e}") from e
 
 
 class AnthropicClient(LLMClient):
@@ -80,8 +79,11 @@ class AnthropicClient(LLMClient):
     
     def __init__(self, api_key: str, model: str = "claude-3-opus-20240229"):
         """Initialize Anthropic client."""
+        from anthropic import AsyncAnthropic
+        
         self.api_key = api_key
         self.model = model
+        self.client = AsyncAnthropic(api_key=self.api_key)
     
     async def generate(
         self,
@@ -91,13 +93,9 @@ class AnthropicClient(LLMClient):
         stream: bool = False
     ) -> AsyncIterator[str]:
         """Generate response from Anthropic."""
-        from anthropic import AsyncAnthropic
-        
-        client = AsyncAnthropic(api_key=self.api_key)
-        
         try:
             if stream:
-                async with client.messages.stream(
+                async with self.client.messages.stream(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=temperature,
@@ -106,7 +104,7 @@ class AnthropicClient(LLMClient):
                     async for text in stream.text_stream:
                         yield text
             else:
-                response = await client.messages.create(
+                response = await self.client.messages.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
                     temperature=temperature,
@@ -115,7 +113,7 @@ class AnthropicClient(LLMClient):
                 yield response.content[0].text
                 
         except Exception as e:
-            raise RuntimeError(f"Anthropic generation error: {e}")
+            raise RuntimeError(f"Anthropic generation error: {e}") from e
 
 
 class Agent:

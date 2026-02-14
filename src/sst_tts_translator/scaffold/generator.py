@@ -145,21 +145,35 @@ class DDDGenerator:
             f"class {entity.name}:",
             f'    """{entity.name} entity."""',
             "    ",
-            "    id: UUID = field(default_factory=uuid4)",
         ]
         
-        # Add fields
+        # Separate fields into required and optional/with-defaults
+        required_fields = []
+        optional_fields = []
+        
         for field_def in entity.fields:
             field_type = field_def.type
-            if not field_def.required:
-                field_type = f"Optional[{field_type}]"
-            
-            if field_def.default is not None:
-                lines.append(f"    {field_def.name}: {field_type} = {field_def.default}")
-            elif not field_def.required:
-                lines.append(f"    {field_def.name}: {field_type} = None")
+            if field_def.required and field_def.default is None:
+                # Required field without default
+                required_fields.append(f"    {field_def.name}: {field_type}")
             else:
-                lines.append(f"    {field_def.name}: {field_type}")
+                # Optional or has default
+                if not field_def.required:
+                    field_type = f"Optional[{field_type}]"
+                
+                if field_def.default is not None:
+                    optional_fields.append(f"    {field_def.name}: {field_type} = {field_def.default}")
+                else:
+                    optional_fields.append(f"    {field_def.name}: {field_type} = None")
+        
+        # Add required fields first
+        lines.extend(required_fields)
+        
+        # Then add the id field with default_factory
+        lines.append("    id: UUID = field(default_factory=uuid4)")
+        
+        # Finally add optional/defaulted fields
+        lines.extend(optional_fields)
         
         # Add methods
         if entity.methods:
@@ -168,6 +182,9 @@ class DDDGenerator:
                 lines.append(f"    def {method}(self):")
                 lines.append(f'        """Implement {method}."""')
                 lines.append("        pass")
+                lines.append("")
+        
+        return "\n".join(lines)
                 lines.append("")
         
         return "\n".join(lines)

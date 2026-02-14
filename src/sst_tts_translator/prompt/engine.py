@@ -3,6 +3,7 @@
 from typing import Dict, Any, Optional, List
 from jinja2 import Environment, FileSystemLoader, Template
 from pathlib import Path
+from html import escape
 import yaml
 
 
@@ -113,22 +114,22 @@ class PromptEngine:
         prompt_parts = []
         
         # Add XML task definition
-        prompt_parts.append(f"<task type='{task_type}'>")
-        prompt_parts.append(f"  <intent>{intent}</intent>")
-        prompt_parts.append(f"  <natural_input>{natural_text}</natural_input>")
+        prompt_parts.append(f"<task type='{escape(task_type)}'>")
+        prompt_parts.append(f"  <intent>{escape(intent)}</intent>")
+        prompt_parts.append(f"  <natural_input>{escape(natural_text)}</natural_input>")
         
         # Add entities if present
         if entities:
             prompt_parts.append("  <entities>")
             for key, value in entities.items():
-                prompt_parts.append(f"    <{key}>{value}</{key}>")
+                prompt_parts.append(f"    <{escape(key)}>{escape(value)}</{escape(key)}>")
             prompt_parts.append("  </entities>")
         
         # Add context blocks
         if context:
             prompt_parts.append("  <context>")
             for key, value in context.items():
-                prompt_parts.append(f"    <{key}>{value}</{key}>")
+                prompt_parts.append(f"    <{escape(key)}>{escape(str(value))}</{escape(key)}>")
             prompt_parts.append("  </context>")
         
         prompt_parts.append("</task>")

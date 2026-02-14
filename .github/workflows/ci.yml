@@ -45,7 +45,7 @@ jobs:
     
     - name: Run tests
       run: |
-        pytest tests/ -v --cov=sst_tts_translator --cov-report=xml || true
+        pytest tests/ -v --cov=sst_tts_translator --cov-report=xml
     
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

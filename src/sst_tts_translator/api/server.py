@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, AsyncIterator
+from starlette.websockets import WebSocketDisconnect
 import asyncio
 import logging
 
@@ -32,7 +33,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,6 +73,13 @@ class VoiceToCodeRequest(BaseModel):
     use_swarm: bool = False
     include_cot: bool = True
     context: Optional[Dict[str, Any]] = None
+
+
+class ScaffoldRequest(BaseModel):
+    """Request model for DDD scaffold generation."""
+    domain_name: str
+    description: str
+    language: str = "python"
 
 
 @app.on_event("startup")
@@ -163,10 +171,13 @@ async def websocket_transcribe(websocket: WebSocket):
     try:
         async def audio_stream():
             while True:
-                data = await websocket.receive_bytes()
-                if data:
-                    yield data
-                else:
+                try:
+                    data = await websocket.receive_bytes()
+                    if data:
+                        yield data
+                    else:
+                        break
+                except WebSocketDisconnect:
                     break
         
         # Stream transcription
@@ -288,7 +299,7 @@ async def voice_to_code(
         # Step 1: Transcribe audio
         audio_data = await file.read()
         transcribed_text = await stt_provider.transcribe_file(audio_data)
-        logger.info(f"Transcribed: {transcribed_text}")
+        logger.debug(f"Transcribed: {transcribed_text[:100]}...")  # Only log first 100 chars at debug level
         
         # Step 2: Translate to structured prompt
         structured_prompt = prompt_engine.translate_to_structured_prompt(
@@ -322,18 +333,12 @@ async def voice_to_code(
 
 
 @app.post("/api/generate-scaffold")
-async def generate_scaffold(
-    domain_name: str,
-    description: str,
-    language: str = "python"
-):
+async def generate_scaffold(request: ScaffoldRequest):
     """
     Generate DDD scaffold from description.
     
     Args:
-        domain_name: Name of the domain
-        description: Natural language description
-        language: Target programming language
+        request: Scaffold generation request with domain_name, description, and language
         
     Returns:
         Generated scaffold files
@@ -341,9 +346,9 @@ async def generate_scaffold(
     try:
         # Create prompt for scaffold generation
         scaffold_prompt = f"""
-Generate a DDD scaffold for a {domain_name} domain with the following description:
+Generate a DDD scaffold for a {request.domain_name} domain with the following description:
 
-{description}
+{request.description}
 
 Provide the output as JSON with entities, value objects, repositories, and services.
 """
@@ -360,15 +365,15 @@ Provide the output as JSON with entities, value objects, repositories, and servi
         llm_output = "".join(llm_output_chunks)
         
         # Parse and generate scaffold
-        generator = DDDGenerator(language=language)
+        generator = DDDGenerator(language=request.language)
         scaffold = generator.parse_from_llm_output(llm_output)
-        scaffold.domain_name = domain_name
+        scaffold.domain_name = request.domain_name
         
         files = generator.generate_scaffold(scaffold)
         
         return {
             "success": True,
-            "domain_name": domain_name,
+            "domain_name": request.domain_name,
             "files": files
         }
     except Exception as e:

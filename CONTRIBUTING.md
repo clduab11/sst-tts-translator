@@ -89,9 +89,22 @@ Then create a Pull Request on GitHub.
 
 - Follow PEP 8
 - Use type hints where appropriate
-- Maximum line length: 100 characters
+- Maximum line length: 100 characters (configured in pyproject.toml)
 - Use meaningful variable names
 - Add docstrings to all public functions/classes
+
+**Formatting Tools (run in order):**
+
+```bash
+# 1. Sort imports
+isort src/ tests/
+
+# 2. Format code
+black src/ tests/
+
+# 3. Check linting
+flake8 src/ tests/
+```
 
 **Example:**
 

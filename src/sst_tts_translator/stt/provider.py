@@ -88,8 +88,7 @@ class WhisperSTT(STTProvider):
         
         # Save to temporary file and transcribe
         import tempfile
-        import numpy as np
-        import soundfile as sf
+        import os
         
         with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
             tmp.write(audio_data)
@@ -105,7 +104,6 @@ class WhisperSTT(STTProvider):
             )
             return result.get("text", "").strip()
         finally:
-            import os
             os.unlink(tmp_path)
 
 
@@ -125,58 +123,74 @@ class DeepgramSTT(STTProvider):
         self, 
         audio_stream: AsyncIterator[bytes]
     ) -> AsyncIterator[str]:
-        """Transcribe streaming audio using Deepgram."""
-        from deepgram import Deepgram
+        """Transcribe streaming audio using Deepgram v3 SDK."""
+        from deepgram import DeepgramClient, LiveTranscriptionEvents, LiveOptions
         
-        dg_client = Deepgram(self.api_key)
-        
-        # Set up streaming transcription
         try:
-            async def audio_generator():
-                async for chunk in audio_stream:
-                    yield chunk
+            # Initialize client
+            dg_client = DeepgramClient(self.api_key)
             
-            response = await dg_client.transcription.live({
-                'punctuate': True,
-                'interim_results': False,
-            })
+            # Connect to live transcription
+            dg_connection = dg_client.listen.websocket.v("1")
             
-            async for chunk in audio_generator():
-                response.send(chunk)
+            # Set up event handler for transcription results
+            transcripts = []
+            
+            def on_message(self, result, **kwargs):
+                sentence = result.channel.alternatives[0].transcript
+                if len(sentence) > 0:
+                    transcripts.append(sentence)
+            
+            # Register event handler
+            dg_connection.on(LiveTranscriptionEvents.Transcript, on_message)
+            
+            # Start connection with options
+            options = LiveOptions(
+                punctuate=True,
+                interim_results=False,
+            )
+            
+            if not await dg_connection.start(options):
+                raise RuntimeError("Failed to start Deepgram connection")
+            
+            # Send audio chunks
+            async for chunk in audio_stream:
+                dg_connection.send(chunk)
+            
+            # Finish and wait for remaining results
+            await dg_connection.finish()
+            
+            # Yield accumulated transcripts
+            for transcript in transcripts:
+                yield transcript
                 
-                # Get transcription
-                result = await response.get_transcript()
-                if result and result.get('channel'):
-                    alternatives = result['channel'].get('alternatives', [])
-                    if alternatives:
-                        transcript = alternatives[0].get('transcript', '')
-                        if transcript:
-                            yield transcript
-            
-            response.finish()
-            
         except Exception as e:
             raise RuntimeError(f"Deepgram transcription error: {e}")
     
     async def transcribe_file(self, audio_data: bytes) -> str:
-        """Transcribe complete audio file using Deepgram."""
-        from deepgram import Deepgram
+        """Transcribe complete audio file using Deepgram v3 SDK."""
+        from deepgram import DeepgramClient, PrerecordedOptions
         
-        dg_client = Deepgram(self.api_key)
+        dg_client = DeepgramClient(self.api_key)
         
-        source = {'buffer': audio_data, 'mimetype': 'audio/wav'}
-        response = await dg_client.transcription.prerecorded(
-            source,
-            {'punctuate': True}
+        # Create payload
+        payload = {"buffer": audio_data}
+        
+        # Configure options
+        options = PrerecordedOptions(
+            punctuate=True
         )
         
+        # Transcribe
+        response = dg_client.listen.rest.v("1").transcribe_file(payload, options)
+        
         # Extract transcript
-        results = response.get('results', {})
-        channels = results.get('channels', [])
-        if channels:
-            alternatives = channels[0].get('alternatives', [])
-            if alternatives:
-                return alternatives[0].get('transcript', '').strip()
+        if response and response.results:
+            channels = response.results.channels
+            if channels and len(channels) > 0:
+                alternatives = channels[0].alternatives
+                if alternatives and len(alternatives) > 0:
+                    return alternatives[0].transcript.strip()
         
         return ""
 

@@ -294,9 +294,12 @@ python -m sst_tts_translator serve --port 8080
 ```bash
 # Check .env file exists and is loaded
 cat .env
-# Verify environment variables
-python -c "from sst_tts_translator.config import settings; print(settings.openai_api_key)"
+
+# Verify environment variables are set (without revealing the key)
+python -c "from sst_tts_translator.config import settings; print('OpenAI API key present' if settings.openai_api_key else 'OpenAI API key missing')"
 ```
+
+**Note:** Never print actual API keys to the terminal or store them in shell history. Use presence checks instead.
 
 ## Performance Tips
 
