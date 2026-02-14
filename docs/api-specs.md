@@ -211,6 +211,273 @@ Generate Domain-Driven Design scaffold.
 
 ---
 
+### 8. Text-to-Speech Synthesis
+
+**POST** `/api/synthesize`
+
+Convert text to speech audio.
+
+**Request Body**
+```json
+{
+  "text": "Your code has been generated successfully",
+  "voice": "default",
+  "stream": false
+}
+```
+
+**Response**
+- Content-Type: `audio/wav`
+- Body: Audio data bytes
+
+**Curl Example**
+```bash
+curl -X POST http://localhost:8000/api/synthesize \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello world", "voice": "default"}' \
+  --output speech.wav
+```
+
+---
+
+### 9. Create Session
+
+**POST** `/api/sessions`
+
+Create a new voice development session.
+
+**Request Body**
+```json
+{
+  "context": {
+    "language": "python",
+    "project": "my-app"
+  }
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "session": {
+    "session_id": "uuid-string",
+    "created_at": "2024-01-01T00:00:00+00:00",
+    "entries": 0,
+    "context": {"language": "python", "project": "my-app"}
+  }
+}
+```
+
+---
+
+### 10. List Sessions
+
+**GET** `/api/sessions`
+
+List all active sessions.
+
+**Response**
+```json
+{
+  "success": true,
+  "sessions": [
+    {
+      "session_id": "uuid-string",
+      "created_at": "2024-01-01T00:00:00+00:00",
+      "entries": 3,
+      "context": {"language": "python"}
+    }
+  ]
+}
+```
+
+---
+
+### 11. Get Session
+
+**GET** `/api/sessions/{session_id}`
+
+Get session details including conversation history.
+
+**Response**
+```json
+{
+  "success": true,
+  "session": {
+    "session_id": "uuid-string",
+    "created_at": "2024-01-01T00:00:00+00:00",
+    "entries": 2,
+    "context": {"language": "python"}
+  },
+  "history": [
+    {"role": "user", "content": "create a REST API", "timestamp": "..."},
+    {"role": "assistant", "content": "Generated code...", "timestamp": "..."}
+  ]
+}
+```
+
+---
+
+### 12. Add Session Entry
+
+**POST** `/api/sessions/{session_id}/entries`
+
+Add a conversation entry to a session.
+
+**Request Body**
+```json
+{
+  "role": "user",
+  "content": "create a user authentication module"
+}
+```
+
+**Response**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### 13. Delete Session
+
+**DELETE** `/api/sessions/{session_id}`
+
+Delete a session by ID.
+
+**Response**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+### 14. Git Status
+
+**GET** `/api/git/status`
+
+Get git repository status.
+
+**Response**
+```json
+{
+  "success": true,
+  "branch": "main",
+  "clean": true,
+  "output": "## main"
+}
+```
+
+---
+
+### 15. Git Diff
+
+**GET** `/api/git/diff?staged=false`
+
+Get git diff output.
+
+**Response**
+```json
+{
+  "success": true,
+  "diff": "diff --git a/file.py ..."
+}
+```
+
+---
+
+### 16. Git Log
+
+**GET** `/api/git/log?count=10`
+
+Get recent commit log.
+
+**Response**
+```json
+{
+  "success": true,
+  "commits": [
+    {
+      "hash": "abc123...",
+      "author": "Developer",
+      "date": "2024-01-01 12:00:00 +0000",
+      "message": "Add feature"
+    }
+  ]
+}
+```
+
+---
+
+### 17. Git Branches
+
+**GET** `/api/git/branches`
+
+List git branches.
+
+**Response**
+```json
+{
+  "success": true,
+  "branches": ["main", "develop", "feature/new-feature"],
+  "current": "main"
+}
+```
+
+---
+
+### 18. Git Commit
+
+**POST** `/api/git/commit`
+
+Stage all changes and commit.
+
+**Request Body**
+```json
+{
+  "message": "Add new feature"
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "output": "[main abc123] Add new feature"
+}
+```
+
+---
+
+### 19. Git Create Branch
+
+**POST** `/api/git/branch`
+
+Create and switch to a new branch.
+
+**Request Body**
+```json
+{
+  "branch_name": "feature/new-feature"
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "branch": "feature/new-feature",
+  "output": "Switched to a new branch 'feature/new-feature'"
+}
+```
+
+---
+
 ## Error Responses
 
 All endpoints return errors in the following format:
@@ -255,6 +522,44 @@ All endpoints return errors in the following format:
   "use_swarm": bool = False,
   "provider": Optional[str] = None,
   "stream": bool = True
+}
+```
+
+### TTSRequest
+```python
+{
+  "text": str,
+  "voice": str = "default",
+  "stream": bool = False
+}
+```
+
+### SessionCreateRequest
+```python
+{
+  "context": Optional[Dict[str, Any]] = None
+}
+```
+
+### SessionEntryRequest
+```python
+{
+  "role": str,
+  "content": str
+}
+```
+
+### GitCommitRequest
+```python
+{
+  "message": str
+}
+```
+
+### GitBranchRequest
+```python
+{
+  "branch_name": str
 }
 ```
 
