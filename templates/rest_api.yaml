@@ -1,0 +1,46 @@
+name: rest_api_generation
+metadata:
+  description: Template for generating REST API endpoints
+  task_type: code_generation
+  language: python
+
+template: |
+  <task type="code_generation">
+    <intent>{{ intent }}</intent>
+    <requirements>
+      <requirement>Create a RESTful API endpoint</requirement>
+      <requirement>Follow FastAPI best practices</requirement>
+      <requirement>Include proper error handling</requirement>
+      <requirement>Add input validation</requirement>
+    </requirements>
+    
+    <context>
+      <framework>FastAPI</framework>
+      <language>Python</language>
+      <pattern>REST API</pattern>
+      {% if additional_context %}
+      {% for key, value in additional_context.items() %}
+      <{{ key }}>{{ value }}</{{ key }}>
+      {% endfor %}
+      {% endif %}
+    </context>
+    
+    <natural_input>{{ natural_input }}</natural_input>
+  </task>
+  
+  <reasoning>
+    Think step by step:
+    1. Identify the resource and operations needed
+    2. Design the endpoint structure and HTTP methods
+    3. Define request/response models using Pydantic
+    4. Implement proper error handling
+    5. Add validation and documentation
+  </reasoning>
+  
+  <output_format>
+    Provide:
+    - Pydantic models for request/response
+    - FastAPI endpoint implementation
+    - Error handling
+    - OpenAPI documentation
+  </output_format>
