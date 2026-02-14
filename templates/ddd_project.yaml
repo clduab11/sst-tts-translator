@@ -1,0 +1,60 @@
+name: ddd_project_scaffold
+metadata:
+  description: Template for generating a complete document-driven project scaffold
+  task_type: scaffold_generation
+  language: python
+
+template: |
+  <task type="ddd_project_scaffold">
+    <intent>{{ intent }}</intent>
+    <project>
+      <name>{{ project_name }}</name>
+      <description>{{ description }}</description>
+      <language>{{ language | default('python') }}</language>
+    </project>
+
+    <requirements>
+      <requirement>Follow Document-Driven Development philosophy</requirement>
+      <requirement>Create comprehensive project documentation first</requirement>
+      <requirement>Separate bounded contexts with clear domain boundaries</requirement>
+      <requirement>Implement repository pattern for data access</requirement>
+      <requirement>Use service layer for business logic orchestration</requirement>
+      <requirement>Include structured README, architecture docs, and API specs</requirement>
+    </requirements>
+
+    <context>
+      <pattern>Document-Driven Development</pattern>
+      <language>{{ language | default('python') }}</language>
+      {% if domains %}
+      <domains>
+        {% for domain in domains %}
+        <domain>{{ domain }}</domain>
+        {% endfor %}
+      </domains>
+      {% endif %}
+      {% if description %}
+      <description>{{ description }}</description>
+      {% endif %}
+    </context>
+  </task>
+
+  <reasoning>
+    Design the project scaffold by:
+    1. Defining the project vision and scope in documentation
+    2. Identifying bounded contexts and domain boundaries
+    3. Creating structured documentation (README, architecture, API specs, roadmap)
+    4. Designing entities, value objects, and aggregates per domain
+    5. Defining repository interfaces and service layers
+    6. Planning the CI/CD pipeline and testing strategy
+    7. Establishing contribution guidelines and development workflow
+  </reasoning>
+
+  <output_format>
+    Provide a complete project scaffold with:
+    - Project documentation (README.md, docs/)
+    - Domain modules with entities, repositories, services
+    - API layer with endpoints and models
+    - Configuration management
+    - Testing structure
+    - CI/CD configuration
+  </output_format>

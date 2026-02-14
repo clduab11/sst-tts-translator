@@ -15,35 +15,38 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
 └────────┬────────┘
          │
          ▼
-┌─────────────────┐
-│  STT Module     │
-│  (Whisper/      │
-│   Deepgram)     │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Prompt Engine   │
+┌─────────────────┐       ┌─────────────────┐
+│  STT Module     │       │ Session Manager  │
+│  (Whisper/      │       │ (Conversation    │
+│   Deepgram)     │       │  Context)        │
+└────────┬────────┘       └────────┬────────┘
+         │                         │
+         ▼                         │
+┌─────────────────┐                │
+│ Prompt Engine   │ ◄──────────────┘
 │  (Natural →     │
 │   Structured)   │
 └────────┬────────┘
          │
          ▼
-┌─────────────────┐
-│  LLM Router     │
-│  (Agent Swarm)  │
-└────────┬────────┘
-         │
+┌─────────────────┐       ┌─────────────────┐
+│  LLM Router     │       │  Git Manager     │
+│  (Agent Swarm)  │       │  (Voice-driven   │
+└────────┬────────┘       │   VCS ops)       │
+         │                └─────────────────┘
          ▼
 ┌─────────────────┐
 │ DDD Scaffold    │
 │   Generator     │
 └────────┬────────┘
          │
-         ▼
-┌─────────────────┐
-│  Code Output    │
-└─────────────────┘
+    ┌────┴────┐
+    ▼         ▼
+┌────────┐ ┌────────────┐
+│ Code   │ │ TTS Module │
+│ Output │ │ (Piper/    │
+└────────┘ │ ElevenLabs)│
+           └────────────┘
 ```
 
 ### Components
@@ -58,7 +61,17 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
   - File-based transcription
   - Configurable sample rates and chunk sizes
 
-#### 2. Prompt Engine
+#### 2. TTS (Text-to-Speech) Module
+- **Purpose**: Convert text responses to speech audio
+- **Providers**:
+  - Piper (local, offline-capable)
+  - ElevenLabs (cloud-based, high quality)
+- **Features**:
+  - Async audio synthesis
+  - Streaming audio output
+  - Multiple voice support
+
+#### 3. Prompt Engine
 - **Purpose**: Transform natural language to structured prompts
 - **Features**:
   - XML tag generation for structured context
@@ -67,7 +80,7 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
   - Intent and entity extraction
   - Template-based prompt generation
 
-#### 3. LLM Router
+#### 4. LLM Router
 - **Purpose**: Manage multiple LLM providers and agent swarms
 - **Providers**:
   - OpenAI (GPT-4, GPT-3.5)
@@ -83,7 +96,7 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
   - Streaming responses
   - Task routing based on type
 
-#### 4. DDD Scaffold Generator
+#### 5. DDD Scaffold Generator
 - **Purpose**: Generate Domain-Driven Design scaffolds
 - **Features**:
   - Entity generation
@@ -92,7 +105,23 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
   - Domain service scaffolding
   - Multi-language support (Python, TypeScript)
 
-#### 5. FastAPI Server
+#### 6. Session Manager
+- **Purpose**: Track persistent voice development conversations
+- **Features**:
+  - In-memory session storage
+  - Conversation history tracking
+  - Context persistence across interactions
+  - Configurable session limits with LRU eviction
+
+#### 7. Git Manager
+- **Purpose**: Voice-driven git repository operations
+- **Features**:
+  - Repository status and diff
+  - Commit log and branch listing
+  - Voice-driven commits and branch creation
+  - Async subprocess execution for non-blocking I/O
+
+#### 8. FastAPI Server
 - **Purpose**: Provide REST API and WebSocket endpoints
 - **Endpoints**:
   - `/api/transcribe`: Audio file transcription
@@ -101,6 +130,9 @@ SST/TTS Translator is a voice-driven development system that transforms natural 
   - `/api/generate-code`: Code generation from prompts
   - `/api/voice-to-code`: Complete pipeline
   - `/api/generate-scaffold`: DDD scaffold generation
+  - `/api/synthesize`: Text-to-speech synthesis
+  - `/api/sessions`: Session management (CRUD)
+  - `/api/git/*`: Git repository operations
 
 ## Data Flow
 
@@ -223,22 +255,22 @@ Scaffold generator follows DDD principles.
 
 ## Future Enhancements
 
-1. **TTS (Text-to-Speech)**
-   - Voice output for code explanations
-   - Multi-voice support
-
-2. **Real-time Collaboration**
+1. **Real-time Collaboration**
    - Multi-user sessions
    - Shared context
 
-3. **Code Execution**
+2. **Code Execution**
    - Sandbox environment
    - Test execution
 
-4. **Version Control Integration**
-   - Git operations
-   - Branch management
+3. **Version Control Integration**
+   - Push/pull operations
+   - Merge conflict resolution
 
-5. **IDE Integration**
+4. **IDE Integration**
    - VS Code extension
    - IntelliJ plugin
+
+5. **Advanced Agent Orchestration**
+   - More specialized agent roles
+   - Parallel agent execution

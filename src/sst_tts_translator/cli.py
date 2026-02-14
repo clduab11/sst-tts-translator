@@ -8,7 +8,7 @@ from .config import settings
 
 
 @click.group()
-@click.version_option(version="0.1.0")
+@click.version_option(version="0.2.0")
 def cli():
     """SST/TTS Translator - Voice-driven development with LLM integration."""
     pass
@@ -139,6 +139,49 @@ def voice_to_code(audio_file: str, task_type: str, swarm: bool, output: str):
     else:
         click.echo("\nGenerated Code:")
         click.echo(code)
+
+
+@cli.command()
+@click.argument("text")
+@click.option("--voice", default="default", help="Voice identifier")
+@click.option("--output", "-o", type=click.Path(), help="Output audio file")
+def speak(text: str, voice: str, output: str):
+    """Synthesize text to speech audio."""
+    from .tts import create_tts_provider
+    
+    click.echo(f"Synthesizing speech...")
+    
+    async def run_synthesis():
+        tts = create_tts_provider(
+            settings.tts_provider,
+            settings.elevenlabs_api_key
+        )
+        return await tts.synthesize(text=text, voice=voice)
+    
+    audio_data = asyncio.run(run_synthesis())
+    
+    if output:
+        with open(output, "wb") as f:
+            f.write(audio_data)
+        click.echo(f"Audio written to {output}")
+    else:
+        click.echo(f"Generated {len(audio_data)} bytes of audio data")
+
+
+@cli.command()
+def git_status():
+    """Show git repository status."""
+    from .git import GitManager
+    
+    async def run_status():
+        gm = GitManager()
+        return await gm.status()
+    
+    result = asyncio.run(run_status())
+    click.echo(f"Branch: {result.get('branch', 'unknown')}")
+    click.echo(f"Clean: {result.get('clean', False)}")
+    if result.get('output'):
+        click.echo(f"\n{result['output']}")
 
 
 if __name__ == "__main__":

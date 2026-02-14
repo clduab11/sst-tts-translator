@@ -4,16 +4,19 @@ from fastapi import FastAPI, UploadFile, File, WebSocket, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, Dict, Any, AsyncIterator
+from typing import Optional, Dict, Any, List, AsyncIterator
 from starlette.websockets import WebSocketDisconnect
 import asyncio
 import logging
 
 from ..config import settings
 from ..stt import create_stt_provider
+from ..tts import create_tts_provider
 from ..prompt import PromptEngine
 from ..llm import LLMRouter, LLMProvider
 from ..scaffold import DDDGenerator
+from ..session import SessionManager
+from ..git import GitManager
 
 # Configure logging
 logging.basicConfig(
@@ -26,7 +29,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="SST/TTS Translator",
     description="Voice-driven development with LLM integration",
-    version="0.1.0"
+    version="0.2.0"
 )
 
 # Add CORS middleware
@@ -40,9 +43,12 @@ app.add_middleware(
 
 # Initialize components
 stt_provider = None
+tts_provider = None
 prompt_engine = None
 llm_router = None
 ddd_generator = None
+session_manager = None
+git_manager = None
 
 
 class TranscriptionRequest(BaseModel):
@@ -82,10 +88,39 @@ class ScaffoldRequest(BaseModel):
     language: str = "python"
 
 
+class TTSRequest(BaseModel):
+    """Request model for text-to-speech synthesis."""
+    text: str
+    voice: str = "default"
+    stream: bool = False
+
+
+class SessionCreateRequest(BaseModel):
+    """Request model for creating a session."""
+    context: Optional[Dict[str, Any]] = None
+
+
+class SessionEntryRequest(BaseModel):
+    """Request model for adding an entry to a session."""
+    role: str
+    content: str
+
+
+class GitCommitRequest(BaseModel):
+    """Request model for git commit."""
+    message: str
+
+
+class GitBranchRequest(BaseModel):
+    """Request model for creating a git branch."""
+    branch_name: str
+
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize components on startup."""
-    global stt_provider, prompt_engine, llm_router, ddd_generator
+    global stt_provider, tts_provider, prompt_engine, llm_router, ddd_generator
+    global session_manager, git_manager
     
     logger.info("Starting SST/TTS Translator...")
     
@@ -95,6 +130,16 @@ async def startup_event():
         settings.deepgram_api_key
     )
     logger.info(f"Initialized STT provider: {settings.stt_provider}")
+    
+    # Initialize TTS provider
+    try:
+        tts_provider = create_tts_provider(
+            settings.tts_provider,
+            settings.elevenlabs_api_key
+        )
+        logger.info(f"Initialized TTS provider: {settings.tts_provider}")
+    except Exception as e:
+        logger.warning(f"TTS provider not available: {e}")
     
     # Initialize prompt engine
     prompt_engine = PromptEngine(settings.prompt_template_dir)
@@ -111,6 +156,14 @@ async def startup_event():
     # Initialize DDD generator
     ddd_generator = DDDGenerator()
     logger.info("Initialized DDD generator")
+    
+    # Initialize session manager
+    session_manager = SessionManager(max_sessions=settings.max_sessions)
+    logger.info("Initialized session manager")
+    
+    # Initialize git manager
+    git_manager = GitManager()
+    logger.info("Initialized git manager")
     
     logger.info("SST/TTS Translator started successfully")
 
@@ -387,6 +440,143 @@ Provide the output as JSON with entities, value objects, repositories, and servi
     except Exception as e:
         logger.error(f"Scaffold generation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- TTS Endpoints ---
+
+@app.post("/api/synthesize")
+async def synthesize_speech(request: TTSRequest):
+    """
+    Synthesize text to speech audio.
+    
+    Args:
+        request: TTS request with text, voice, and stream options
+        
+    Returns:
+        Audio data or streaming audio response
+    """
+    if tts_provider is None:
+        raise HTTPException(
+            status_code=503,
+            detail="TTS provider not configured. Check TTS_PROVIDER and "
+                   "related API keys in environment variables."
+        )
+    
+    try:
+        if request.stream:
+            async def audio_stream():
+                async for chunk in tts_provider.synthesize_stream(
+                    text=request.text,
+                    voice=request.voice
+                ):
+                    yield chunk
+            
+            return StreamingResponse(
+                audio_stream(),
+                media_type="audio/wav"
+            )
+        else:
+            audio_data = await tts_provider.synthesize(
+                text=request.text,
+                voice=request.voice
+            )
+            return StreamingResponse(
+                iter([audio_data]),
+                media_type="audio/wav",
+                headers={"Content-Length": str(len(audio_data))}
+            )
+    except Exception as e:
+        logger.error(f"TTS synthesis error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Session Endpoints ---
+
+@app.post("/api/sessions")
+async def create_session(request: SessionCreateRequest):
+    """Create a new voice development session."""
+    session = session_manager.create_session(context=request.context)
+    return {"success": True, "session": session.get_summary()}
+
+
+@app.get("/api/sessions")
+async def list_sessions():
+    """List all active sessions."""
+    return {"success": True, "sessions": session_manager.list_sessions()}
+
+
+@app.get("/api/sessions/{session_id}")
+async def get_session(session_id: str):
+    """Get session details by ID."""
+    session = session_manager.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {
+        "success": True,
+        "session": session.get_summary(),
+        "history": session.history
+    }
+
+
+@app.post("/api/sessions/{session_id}/entries")
+async def add_session_entry(session_id: str, request: SessionEntryRequest):
+    """Add an entry to a session."""
+    if not session_manager.add_to_session(session_id, request.role, request.content):
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"success": True}
+
+
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: str):
+    """Delete a session."""
+    if not session_manager.delete_session(session_id):
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"success": True}
+
+
+# --- Git Endpoints ---
+
+@app.get("/api/git/status")
+async def git_status():
+    """Get git repository status."""
+    result = await git_manager.status()
+    return {"success": True, **result}
+
+
+@app.get("/api/git/diff")
+async def git_diff(staged: bool = False):
+    """Get git diff output."""
+    result = await git_manager.diff(staged=staged)
+    return {"success": True, "diff": result}
+
+
+@app.get("/api/git/log")
+async def git_log(count: int = 10):
+    """Get recent git commit log."""
+    commits = await git_manager.log(count=count)
+    return {"success": True, "commits": commits}
+
+
+@app.get("/api/git/branches")
+async def git_branches():
+    """List git branches."""
+    branches = await git_manager.branch_list()
+    current = await git_manager.current_branch()
+    return {"success": True, "branches": branches, "current": current}
+
+
+@app.post("/api/git/commit")
+async def git_commit(request: GitCommitRequest):
+    """Stage all changes and commit."""
+    result = await git_manager.commit(message=request.message)
+    return result
+
+
+@app.post("/api/git/branch")
+async def git_create_branch(request: GitBranchRequest):
+    """Create and switch to a new branch."""
+    result = await git_manager.create_branch(branch_name=request.branch_name)
+    return result
 
 
 if __name__ == "__main__":
