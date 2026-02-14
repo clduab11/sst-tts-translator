@@ -52,7 +52,7 @@ jobs:
         docker build -t sst-tts-translator:test .
     
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@0.33.1  # v0.33.1
       with:
         image-ref: 'sst-tts-translator:test'
         format: 'sarif'
